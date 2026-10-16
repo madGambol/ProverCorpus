@@ -1,27 +1,31 @@
 #!/bin/bash
 #
-# baseline_ab.sh -- the capability A/B this project did not have: the same
-#                   TPTP sample, the same budget, pristine against current.
+# baseline_ab.sh -- the capability A/B: same TPTP sample, same budget,
+#                   baseline against current, INTERLEAVED.
 #
-# WHY IT IS NEEDED.  Every sweep run here measured a fixed build, so the
-# figures were absolute, not differential: "Prover9 answers 38.5% at 10 s"
-# says nothing about whether this tree's work helped.  The claim that the
-# work produced a better prover needs both sides measured the same way.
+# WHY INTERLEAVED, AND NOT ONE BUILD THEN THE OTHER.  CPU time is not
+# load-invariant: it measures time on core, and under memory-bandwidth and
+# cache contention a process does less work per on-core second.  Measured on
+# this machine, the same binary on the same input took 20.48, 18.95, 10.87 and
+# 10.14 CPU seconds across four reps as load varied -- a 2x spread with no
+# code difference at all.  Running one build to completion and then the other
+# would hand them different load conditions and attribute the difference to
+# the code.  So both builds' runs go into one queue, alternating, and every
+# run of either build sees the same average contention.
 #
-# WHAT TO EXPECT, and why.  The PF2-PF10 series cut startup on a large input
-# from 157.53 s to 3.80 s.  At a fixed 10-second budget that should convert
-# timeouts into answers on the big problems, because pristine spends the whole
-# budget in preprocessing and never reaches a search.  That is the hypothesis;
-# this measures it instead of assuming it.
+# WHY A MEMORY CAP ON BOTH SIDES.  The baseline predates M9-M13, so its cell
+# table, negprop index and ground-clause generation are all unbounded; an
+# uncapped sweep of it is what exhausted this machine's swap and cost a
+# reboot.  Both sides therefore run under the same cgroup with swap forbidden
+# and the same per-run address-space cap.  The cap is part of the experimental
+# condition, applied identically, and is reported with the result.  Baseline
+# crashes and fatals are counted as categories rather than prevented: a prover
+# that cannot be run under a memory budget is worse than one that can, and the
+# table should show it.
 #
-# A DESIGN NOTE THAT IS ITSELF A RESULT.  Pristine cannot safely run this
-# sweep: without M9-M12 its cell table, negprop index and ground-clause
-# generation are all unbounded, which is what exhausted this machine's swap
-# and cost a reboot.  So both sides run inside the same cgroup with swap
-# forbidden and the same per-run address-space cap, and pristine's SIGSEGVs
-# and FATALs are counted as categories rather than being prevented.  A prover
-# that cannot be run under a memory budget is worse than one that can, and
-# the table should show that rather than hide it.
+# jobs x per-run cap must fit the cgroup budget.  32 x 4 GB = 128 GB under a
+# 160 GB ceiling.  Getting this wrong (12 GB x 64 = 768 GB under 160 GB) had
+# the kernel OOM-kill the driver and end a 5,171-run sweep at 1,236 rows.
 #
 # Usage: baseline_ab.sh BIN_A BIN_B OUT_A OUT_B [SAMPLE] [SECS] [JOBS]
 
@@ -32,42 +36,44 @@ OUTA=${3:?need the baseline output tsv}
 OUTB=${4:?need the current output tsv}
 SAMPLE=${5:-$HOME/Projects/prover9-corpus/oracle_sample.txt}
 SECS=${6:-10}
-JOBS=${7:-40}
-MEM_KB=${MEM_KB:-12000000}
+JOBS=${7:-32}
+MEM_KB=${MEM_KB:-4000000}
 CGROUP_MAX=${CGROUP_MAX:-160G}
 HERE=$(cd "$(dirname "$0")" && pwd)
 ONE=/home/chris/Projects/TPTP/results-prover9mace4/cap2_one.sh
 TPTP=${TPTP_DIR:-$HOME/Projects/TPTP/TPTP-v9.3.1}
 
-[ -x "$ONE" ] || { echo "cannot execute $ONE" >&2; exit 2; }
+for p in "$ONE" "$A/prover9" "$B/prover9"; do
+  [ -x "$p" ] || { echo "cannot execute $p" >&2; exit 2; }
+done
 [ -r "$SAMPLE" ] || { echo "cannot read $SAMPLE" >&2; exit 2; }
 
-# one prover, one problem, one build -- capped the same way on both sides
+# worker: "side<TAB>prog<TAB>path" -> one row appended to that side's file
 cat > "$HERE/.ab_one.sh" <<'EOF'
 #!/bin/bash
 set -u
-prog="${1%%	*}"; p="${1#*	}"
-ulimit -v "$MEM_KB"
-exec timeout "$WALL" "$H" "$prog" "$p"
+line=$1
+side=${line%%	*}; rest=${line#*	}
+prog=${rest%%	*}; p=${rest#*	}
+case $side in A) bin=$BIN_A; out=$OUT_A ;; B) bin=$BIN_B; out=$OUT_B ;; *) exit 0 ;; esac
+row=$( ulimit -v "$MEM_KB"; BIN_DIR="$bin" TPTP_SECS="$SECS" timeout "$WALL" "$H" "$prog" "$p" 2>/dev/null )
+[ -n "$row" ] && printf '%s\n' "$row" >> "$out"
 EOF
 chmod +x "$HERE/.ab_one.sh"
 
-run() {   # run <bin> <out>
-  bin=$1; out=$2
-  : > "$out"
-  # both provers for every problem, which is what the sample lines mean
-  awk '{print "prover9\t" $0 "\nmace4\t" $0}' "$SAMPLE" > "$out.work"
-  echo "  $(wc -l < "$out.work") runs against $bin"
-  systemd-run --user --scope -q -p "MemoryMax=$CGROUP_MAX" -p MemorySwapMax=0 \
-    env BIN_DIR="$bin" TPTP_SECS="$SECS" MEM_KB="$MEM_KB" WALL=$((SECS * 8 + 120)) \
-        H="$ONE" \
-    bash -c "cd '$TPTP' && xargs -a '$out.work' -d'\\n' -P $JOBS -I{} '$HERE/.ab_one.sh' '{}' >> '$out' 2>/dev/null"
-  rm -f "$out.work"
-  echo "  $(wc -l < "$out") rows written to $out"
-}
+: > "$OUTA"; : > "$OUTB"
+work=$(mktemp) || exit 2
+trap 'rm -f "$work"' 0 1 2 3 15
+# interleave: for each problem, both provers, both builds, alternating sides
+awk '{ printf "A\tprover9\t%s\nB\tprover9\t%s\nA\tmace4\t%s\nB\tmace4\t%s\n", $0,$0,$0,$0 }' \
+  "$SAMPLE" > "$work"
+total=$(wc -l < "$work")
+echo "$total runs ($((total/2)) per build), $JOBS jobs, ${SECS}s CPU, ${MEM_KB}KB cap, cgroup $CGROUP_MAX"
 
-echo "=== baseline: $A ==="
-run "$A" "$OUTA"
-echo "=== current: $B ==="
-run "$B" "$OUTB"
-echo "done; score with oracle_scoreboard.sh on each, and diff the categories"
+systemd-run --user --scope -q -p "MemoryMax=$CGROUP_MAX" -p MemorySwapMax=0 \
+  env BIN_A="$A" BIN_B="$B" OUT_A="$OUTA" OUT_B="$OUTB" \
+      SECS="$SECS" MEM_KB="$MEM_KB" WALL=$((SECS * 8 + 120)) H="$ONE" \
+  bash -c "cd '$TPTP' && xargs -a '$work' -d'\\n' -P $JOBS -I{} '$HERE/.ab_one.sh' '{}'"
+
+echo "baseline rows: $(wc -l < "$OUTA")"
+echo "current  rows: $(wc -l < "$OUTB")"
