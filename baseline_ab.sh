@@ -40,7 +40,7 @@ JOBS=${7:-32}
 MEM_KB=${MEM_KB:-4000000}
 CGROUP_MAX=${CGROUP_MAX:-160G}
 HERE=$(cd "$(dirname "$0")" && pwd)
-ONE=/home/chris/Projects/TPTP/results-prover9mace4/cap2_one.sh
+ONE=${RUN_ONE:-$HERE/run_one.sh}
 TPTP=${TPTP_DIR:-$HOME/Projects/TPTP/TPTP-v9.3.1}
 
 for p in "$ONE" "$A/prover9" "$B/prover9"; do

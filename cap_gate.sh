@@ -41,7 +41,7 @@ JOBS=${4:-32}
 MEM_KB=${MEM_KB:-4000000}
 REPS=${REPS:-2}
 HERE=$(cd "$(dirname "$0")" && pwd)
-ONE=${CAP_ONE:-/home/chris/Projects/TPTP/results-prover9mace4/cap2_one.sh}
+ONE=${CAP_ONE:-$HERE/run_one.sh}
 TPTP=${TPTP_DIR:-$HOME/Projects/TPTP/TPTP-v9.3.1}
 LIST=${CAP_LIST:-$HERE/cap_gate_problems.txt}
 

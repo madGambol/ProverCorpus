@@ -11,11 +11,11 @@
 # reports being out of memory, and the run ends cleanly instead of starving.
 #
 # Input is "prog<TAB>path".
-export BIN_DIR="${BIN_DIR:-/home/chris/Projects/Prover9Mace4/bin}"
+export BIN_DIR="${BIN_DIR:-$(cd "$(dirname "$0")/../Prover9Mace4/bin" 2>/dev/null && pwd)}"
 export TPTP_SECS="${TPTP_SECS:-300}"
 MEM_KB="${MEM_KB:-12000000}"      # 12 GB: calibrated so legitimate runs do not fail
 WALL="${WALL:-900}"              # and no slot held longer than 15 min
-H=/home/chris/Projects/TPTP/results-prover9mace4/cap2_one.sh
+H=${RUN_ONE:-$(cd "$(dirname "$0")" && pwd)/run_one.sh}
 prog="${1%%	*}"; p="${1#*	}"
 ulimit -v "$MEM_KB"
 exec timeout "$WALL" "$H" "$prog" "$p"

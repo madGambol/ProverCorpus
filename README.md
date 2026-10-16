@@ -4,6 +4,19 @@ The input corpus the `Prover9Mace4` gates run against. It lived in a session
 scratchpad until 2026-10-14, which meant the two most valuable gates could not
 be re-run once the session ended; it is here so that they can.
 
+## Start here
+
+- **`LICENSING.md`** — terms, and what is bundled versus what you must fetch.
+- **`results/`** — every scored sweep, gzipped, each with its conditions
+  recorded in the commit that added it.
+- The headline numbers these results produce are written up in the parent
+  tree's `RESULTS.md`; this repo is the evidence behind them.
+
+**Two things are not here and are needed to reproduce anything:** the TPTP
+problem library (v9.3.1, from <https://www.tptp.org> — `results/` holds problem
+*paths*, not problems) and a built `Prover9Mace4` tree. The scripts look for
+`../Prover9Mace4/bin` and take `BIN_DIR`/`TPTP_DIR` to override.
+
 ## What is here
 
 | path | what | where it came from |
@@ -18,6 +31,22 @@ Both lists hold absolute paths into this directory. If it moves, rewrite them:
 ```sh
 sed -i "s|/old/path|$PWD|" files.txt comparable.txt
 ```
+
+## The tools
+
+| script | what it does |
+| --- | --- |
+| `run_one.sh` | runs ONE problem under one prover and emits one TSV row: `prog dom form status rating nforms verdict ms rc problem`. Everything else drives this. Limits are CPU time, not wall clock. |
+| `oracle_run.sh`, `oracle_sweep_resume.sh`, `oracle_retry_capped.sh` | the absolute capability sweeps, resumable |
+| `oracle_scoreboard.sh` | scores a sweep: soundness first, then capability |
+| `baseline_ab.sh` | the capability A/B against a second build, both builds **interleaved** in one shuffled queue |
+| `cap_compare.sh`, `score_r1.sh` | score an A/B, and set two A/B runs against each other |
+| `cross_feed.sh` | attribute a capability change to the INPUT or to the PROVER, by running all four combinations of {old,new} translation x {old,new} prover |
+| `freevars.py` | the soundness oracle that needs no reasoning: every TPTP `fof` formula is closed, so a free variable in the translated output is wrong on its face |
+| `recheck_changed.sh` | re-run only the pairs that changed hands, several times each, and report STABLE or NOISE |
+| `cap_gate.sh` | the fast capability gate: the 294 problems that have ever changed hands |
+| `verify_models.sh` | re-derive every Mace4 model and check every input clause against it |
+| `dump_translations.sh` | per-problem translations for `cross_feed.sh` and `freevars.py` |
 
 ## How the two lists differ, and why it matters
 

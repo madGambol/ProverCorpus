@@ -29,7 +29,7 @@
 # Environment: BIN_DIR, SECS (CPU seconds, default 300), MEGS (default 2000).
 
 set -u
-B=${BIN_DIR:-/home/chris/Projects/Prover9Mace4/bin}
+B=${BIN_DIR:-$(cd "$(dirname "$0")/../Prover9Mace4/bin" 2>/dev/null && pwd)}
 SECS=${SECS:-300}
 MEGS=${MEGS:-2000}
 p=${1:?need a problem path}

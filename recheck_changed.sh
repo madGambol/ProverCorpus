@@ -27,7 +27,7 @@ BIN_B=${BIN_B:?set BIN_B}
 SECS=${SECS:-10}
 MEM_KB=${MEM_KB:-4000000}
 HERE=$(cd "$(dirname "$0")" && pwd)
-ONE=/home/chris/Projects/TPTP/results-prover9mace4/cap2_one.sh
+ONE=${RUN_ONE:-$HERE/run_one.sh}
 TPTP=${TPTP_DIR:-$HOME/Projects/TPTP/TPTP-v9.3.1}
 W=$(mktemp -d) || exit 2
 trap 'rm -rf "$W"' 0 1 2 3 15
