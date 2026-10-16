@@ -2,3 +2,12 @@
 # as .tsv.gz; these are the scratch of a run in flight.
 *.err
 guard.log
+results/*.pid
+
+# A sweep appends to its .tsv as it goes, so committing one while the driver is
+# still running records a PARTIAL run with no way to tell from the file that it
+# is partial.  That already cost this corpus one disclosed provenance defect
+# (the mace4 300 s sweep has a build boundary at row 3782).  The .tsv.gz is
+# written once, after the driver reports complete, and that is what is kept.
+results/*.tsv
+!results/*.tsv.gz

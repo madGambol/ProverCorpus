@@ -235,3 +235,37 @@ analysis, while a tool that says "no scorable rows" points at the input.
 This is third-party data, downloaded, and it is treated as untrusted input:
 nothing here is executed, the paths are passed to the provers as arguments, and
 the directory holds no scripts.
+
+## The capability A/B, and why it needs a cross-feed
+
+`baseline_ab.sh` runs the same sample against two builds, interleaved. The
+first run of it on this tree (`results/cap-10s-*.tsv.gz`, 8,996 problems, both
+provers, 10 s CPU, 4 GB per run, pristine `7f94204` against `ce7d848`) reported
+prover9's sound answers down 2,353 -> 2,219, which read as a 134-answer
+regression.
+
+It was not one, and the reason matters for anyone comparing two builds that
+differ in more than the prover. **A corrected translation is a different
+problem.** This tree fixes a translator defect (T4: the negation of a
+quantified formula was dropped), so for 1,000-odd problems the two builds are
+not being asked the same question — the baseline was answering a formula the
+input never contained. Losing such a problem is the fix working.
+
+`cross_feed.sh` separates the two causes by running all four combinations of
+{baseline, current} translation x {baseline, current} prover:
+
+| | baseline prover | current prover |
+| --- | ---: | ---: |
+| **baseline translation** | 205 answers | 190 |
+| **current translation** | 18 | 6 |
+
+Per problem that is **186 input, 13 prover, 6 noise**. The 13 bisected to a
+single commit and are written up as R1 in `../Prover9Mace4/FIXES.md`. Quoting
+the 134 without the split would have been wrong in both directions at once:
+it overstates the regression tenfold and hides a real one.
+
+`freevars.py` is the other half of the argument, and it needs no logic. Every
+TPTP `fof` formula is closed, so a free variable in the translated output is a
+defect on its face. Over the 288 FOF problems involved, pristine emits **1,168
+formulas with a free variable** and this tree emits **0**. The LADR-2026
+translator (`62ae6ff`) emits the same 1,168 — the defect is live upstream.

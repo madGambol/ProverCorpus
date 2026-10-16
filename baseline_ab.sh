@@ -61,14 +61,29 @@ row=$( ulimit -v "$MEM_KB"; BIN_DIR="$bin" TPTP_SECS="$SECS" timeout "$WALL" "$H
 EOF
 chmod +x "$HERE/.ab_one.sh"
 
-: > "$OUTA"; : > "$OUTB"
+touch "$OUTA" "$OUTB"
 work=$(mktemp) || exit 2
 trap 'rm -f "$work"' 0 1 2 3 15
-# interleave: for each problem, both provers, both builds, alternating sides
+
+# RESUMABLE.  A row's first field is the prover and its last is the problem
+# path, which with the side is exactly the key the work list is made of, so
+# the remaining work is computable from the output.  Without this a driver
+# killed at hour six costs the whole run -- which is how a 5,171-run sweep
+# ended at 1,236 rows when a cgroup OOM-killed its xargs.
+{
+  awk -F'\t' '{print "A\t" $1 "\t" $NF}' "$OUTA"
+  awk -F'\t' '{print "B\t" $1 "\t" $NF}' "$OUTB"
+} | sort -u > "$work.done"
+
 awk '{ printf "A\tprover9\t%s\nB\tprover9\t%s\nA\tmace4\t%s\nB\tmace4\t%s\n", $0,$0,$0,$0 }' \
-  "$SAMPLE" > "$work"
+  "$SAMPLE" | sort -u > "$work.all"
+comm -23 "$work.all" "$work.done" | shuf > "$work"
+rm -f "$work.all" "$work.done"
+
 total=$(wc -l < "$work")
-echo "$total runs ($((total/2)) per build), $JOBS jobs, ${SECS}s CPU, ${MEM_KB}KB cap, cgroup $CGROUP_MAX"
+have=$(( $(wc -l < "$OUTA") + $(wc -l < "$OUTB") ))
+echo "$total runs left of 35968 ($have already recorded), $JOBS jobs, ${SECS}s CPU, ${MEM_KB}KB cap, cgroup $CGROUP_MAX"
+echo $$ > "$(dirname "$OUTA")/ab.pid"
 
 systemd-run --user --scope -q -p "MemoryMax=$CGROUP_MAX" -p MemorySwapMax=0 \
   env BIN_A="$A" BIN_B="$B" OUT_A="$OUTA" OUT_B="$OUTB" \
