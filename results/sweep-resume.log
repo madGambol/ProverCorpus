@@ -1,1 +1,3 @@
 pass 1: 1229 rows done, 3942 to run, 48 jobs, MemoryMax=160G
+pass 1 ended (rc=0), 3942 rows added
+sweep complete: 5171 rows, nothing left to run
