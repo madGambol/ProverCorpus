@@ -25,6 +25,14 @@
 # INTERLEAVED, because CPU time is not load-invariant: the same binary on the
 # same input measured 20.48 / 18.95 / 10.87 / 10.14 CPU seconds across four
 # reps as load varied.  A serial A/B attributes that to the code.
+#
+# DO NOT RUN THIS UNDER ANOTHER SWEEP, and do not run it at REPS=1.  The same
+# twelve-problem list, same two builds, gave 1 lost and then 2 lost at REPS=1
+# while an 8,996-problem A/B was saturating all 64 slots -- both figures noise,
+# because a 10 s budget on a loaded machine is not the same budget.  Hence the
+# default of two reps and the rule that a flip counts only if it reproduces in
+# EVERY rep on both sides.  The load average is printed with the result so a
+# surprising number can be read in context.
 set -u
 A=${1:?need the baseline bin dir}
 B=${2:?need the candidate bin dir}
@@ -60,6 +68,7 @@ awk -v r="$REPS" '{ for (i=1;i<=r;i++) for (s="A"; s!="done"; s=(s=="A"?"B":"don
       printf "%s\tprover9\t%s\t%d\n", s, $0, i; printf "%s\tmace4\t%s\t%d\n", s, $0, i } }' \
   "$LIST" | shuf > $W/work
 echo "cap_gate: $(wc -l < "$LIST") problems, both provers, $REPS reps per build, ${SECS}s CPU, $JOBS jobs"
+echo "cap_gate: load average now $(cut -d' ' -f1-3 /proc/loadavg) on $(nproc) cores -- a loaded machine makes a ${SECS}s budget mean less"
 cd "$TPTP" || exit 2
 xargs -a $W/work -d'\n' -P "$JOBS" -I{} \
   env BIN_A="$A" BIN_B="$B" SECS="$SECS" MEM_KB="$MEM_KB" H="$ONE" OUT=$W/out $W/one.sh '{}'
