@@ -1,0 +1,4 @@
+# Transient products of a running sweep.  The finished results are committed
+# as .tsv.gz; these are the scratch of a run in flight.
+*.err
+guard.log

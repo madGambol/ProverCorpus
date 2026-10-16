@@ -1,0 +1,20 @@
+# robots.txt
+User-agent: *
+Disallow: 
+Disallow: /cgi-bin/
+
+User-agent: SemrushBot
+Disallow: /
+
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: Amazonbot
+Disallow: /
+
+User-agent: DotBot
+Disallow: /
+
+User-agent: MJ12bot
+Disallow: /
+
