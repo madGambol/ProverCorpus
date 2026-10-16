@@ -11,3 +11,6 @@ results/*.pid
 # written once, after the driver reports complete, and that is what is kept.
 results/*.tsv
 !results/*.tsv.gz
+
+# Generated at runtime by baseline_ab.sh; not source.
+.ab_one.sh
