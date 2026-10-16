@@ -8,10 +8,13 @@ Everything written for this repository — the sweep drivers, the scoring and
 analysis tools, `run_one.sh`, the problem lists and everything under
 `results/` — is **GPL-2.0-only**, the same licence as the tree it tests.
 [`COPYING`](COPYING) holds the licence text, and each script carries the notice
-in its own header, dated, naming Chris Arena and Claude Opus 5 as the authors.
-(Naming an AI records authorship, as the commit trailers do; it is not a claim
-that machine-generated text is copyrightable, which in the US it is not. The
-enforceable copyright is Chris Arena's.) The three Markdown files carry a
+in its own header, dated, with the copyright held by Chris Arena and a second
+line recording that the file was written in collaboration with Claude Opus 5 —
+the same thing the `Co-Authored-By` trailer on every commit says. The credit is
+deliberately not in the copyright line: the US Copyright Office's position is
+that purely machine-generated material is not copyrightable, so a joint holder
+line would assert something the law does not grant, while the authorship is
+simply a fact about how the file was written. The three Markdown files carry a
 one-line footer instead of a header, so that a licence block is not the first
 thing a reader meets.
 
@@ -50,5 +53,6 @@ problems themselves. Reproducing any TPTP figure needs **TPTP v9.3.1** from
 
 ---
 
-Copyright (C) 2026 Chris Arena and Claude Opus 5, 2026-10-16.  GPL-2.0-only; see
-`COPYING`.  Not part of the LADR-2009-11A release.
+Copyright (C) 2026 Chris Arena, 2026-10-16.  Written in collaboration
+with Claude Opus 5 (Anthropic).  GPL-2.0-only; see `COPYING`.  Not part
+of the LADR-2009-11A release.

@@ -312,5 +312,6 @@ translator (`62ae6ff`) emits the same 1,168 — the defect is live upstream.
 
 ---
 
-Copyright (C) 2026 Chris Arena and Claude Opus 5, 2026-10-16.  GPL-2.0-only; see
-`COPYING`.  Not part of the LADR-2009-11A release.
+Copyright (C) 2026 Chris Arena, 2026-10-16.  Written in collaboration
+with Claude Opus 5 (Anthropic).  GPL-2.0-only; see `COPYING`.  Not part
+of the LADR-2009-11A release.

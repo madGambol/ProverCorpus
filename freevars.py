@@ -1,4 +1,5 @@
-#  Copyright (C) 2026 Chris Arena and Claude Opus 5, 2026-10-16.
+#  Copyright (C) 2026 Chris Arena, 2026-10-16.
+#  Written in collaboration with Claude Opus 5 (Anthropic).
 #
 #  This file is part of the Prover9/Mace4 regression corpus, the test
 #  material for the Prover9Mace4 tree.  It is not part of William
