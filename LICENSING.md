@@ -6,8 +6,19 @@ This repository holds three kinds of thing, under two sets of terms.
 
 Everything written for this repository — the sweep drivers, the scoring and
 analysis tools, `run_one.sh`, the problem lists and everything under
-`results/` — is **GPL-2.0-only**, the same licence as the tree it tests. That
-tree's `COPYING` holds the licence text; it is not duplicated here.
+`results/` — is **GPL-2.0-only**, the same licence as the tree it tests.
+[`COPYING`](COPYING) holds the licence text, and each script carries the notice
+in its own header, dated, naming Chris Arena and Claude Opus 5 as the authors.
+(Naming an AI records authorship, as the commit trailers do; it is not a claim
+that machine-generated text is copyrightable, which in the US it is not. The
+enforceable copyright is Chris Arena's.) The three Markdown files carry a
+one-line footer instead of a header, so that a licence block is not the first
+thing a reader meets.
+
+`COPYING` was added when these notices were: a repository that tells you
+"you should have received a copy of the GNU General Public License" should be
+the one that gave it to you, and this one is distributed on its own, not only
+beside the tree it tests.
 
 GPL-2.0-only rather than "or later" because the LADR-2009-11A sources say
 "version 2" without the "or (at your option) any later version" clause, and a
@@ -36,3 +47,8 @@ problems themselves. Reproducing any TPTP figure needs **TPTP v9.3.1** from
 
 **The provers.** The scripts expect a built `Prover9Mace4` tree; they look for
 `../Prover9Mace4/bin` by default and take `BIN_DIR` otherwise.
+
+---
+
+Copyright (C) 2026 Chris Arena and Claude Opus 5, 2026-10-16.  GPL-2.0-only; see
+`COPYING`.  Not part of the LADR-2009-11A release.

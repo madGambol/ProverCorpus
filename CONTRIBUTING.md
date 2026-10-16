@@ -23,3 +23,8 @@ git worktree add --detach /tmp/b <commit> && (cd /tmp/b && make all)
 
 Every gate accepts a bin directory, so there is never a reason to touch the
 live `bin/` while a sweep is in flight.
+
+---
+
+Copyright (C) 2026 Chris Arena and Claude Opus 5, 2026-10-16.  GPL-2.0-only; see
+`COPYING`.  Not part of the LADR-2009-11A release.
