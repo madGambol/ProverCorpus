@@ -17,6 +17,18 @@ problem library (v9.3.1, from <https://www.tptp.org> — `results/` holds proble
 *paths*, not problems) and a built `Prover9Mace4` tree. The scripts look for
 `../Prover9Mace4/bin` and take `BIN_DIR`/`TPTP_DIR` to override.
 
+```sh
+git clone https://mirror.invalid/Prover9Mace4.git
+git clone https://mirror.invalid/Prover9Corpus.git prover9-corpus
+(cd Prover9Mace4 && make all)
+```
+
+The examples below spell the corpus directory `~/Projects/prover9-corpus`,
+which is why the clone above is named that; the published repository is
+`Prover9Corpus`. Nothing but those examples depends on the name — the scripts
+resolve the tree under test as `../Prover9Mace4/bin`, whatever this directory
+is called.
+
 ## What is here
 
 | path | what | where it came from |
@@ -91,8 +103,7 @@ differ. Expect **A/A = 0**; any A/B difference needs explaining, not averaging.
 ## The soundness oracle
 
 `oracle_run.sh` runs one TPTP problem through both provers against a given
-build and emits the TSV that
-`~/Projects/TPTP/results-prover9mace4/cap2_one.sh` defines. The verdict column
+build and emits the TSV that `run_one.sh` defines. The verdict column
 carries **`UNSOUND`** when a prover contradicts the problem's own SZS status:
 Prover9 proving a `Satisfiable` or `CounterSatisfiable` problem, or Mace4
 finding a model of a `Theorem`, `Unsatisfiable` or `ContradictoryAxioms` one.
