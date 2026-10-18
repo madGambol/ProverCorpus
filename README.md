@@ -83,11 +83,11 @@ provers' own time limits, see the `self_terminating`/`clock_limited` helpers in
 ## Running the gates
 
 ```sh
-cd ~/Projects/Prover9Mace4/test.src
+cd ../Prover9Mace4/test.src                  # from this clone, beside the tree
 
 make tier1                                   # ~2 s
 make tier2 BASELINE=/path/to/pristine/bin    # ~3 min
-make tier3 CORPUS=../prover9-corpus/files.txt JOBS=8   # ~15 min at 8 jobs
+make tier3 CORPUS=../../prover9-corpus/files.txt JOBS=8   # ~15 min at 8 jobs
 ```
 
 The A/B is not a make target because it needs a second build to compare
@@ -114,10 +114,13 @@ For a theorem prover this is the check that matters most, because everything
 else only measures how much it can do, not whether what it says is true.
 
 ```sh
-cd ~/Projects/TPTP/TPTP-v9.3.1          # includes resolve relative to here
-BIN_DIR=~/Projects/Prover9Mace4/bin TPTP_SECS=10 \
-  xargs -a ~/Projects/prover9-corpus/oracle_sample.txt -P "$(nproc)" -I{} \
-    ~/Projects/prover9-corpus/oracle_run.sh '{}' > oracle.tsv
+# From this clone.  The build defaults to the sibling ../Prover9Mace4/bin;
+# set BIN_DIR to use a different one.
+CORPUS=$(pwd)
+cd /path/to/TPTP-v9.3.1                 # includes resolve relative to here
+TPTP_SECS=10 \
+  xargs -a "$CORPUS/oracle_sample.txt" -P "$(nproc)" -I{} \
+    "$CORPUS/oracle_run.sh" '{}' > oracle.tsv
 grep UNSOUND oracle.tsv
 ```
 
@@ -133,13 +136,14 @@ happily as on a correct one. Before believing a clean result, confirm `UNSOUND`
 actually triggers, by giving the oracle a problem whose stated status is a lie:
 
 ```sh
+CORPUS=$(pwd)                                  # from this clone, as above
+TPTP_DIR=/path/to/TPTP-v9.3.1
 mkdir -p /tmp/ctl/Problems/ZZZ
-ln -sfn ~/Projects/TPTP/TPTP-v9.3.1/Axioms /tmp/ctl/Axioms   # or include() fails
+ln -sfn "$TPTP_DIR/Axioms" /tmp/ctl/Axioms     # or include() fails
 sed 's/^% Status   : Unsatisfiable/% Status   : Satisfiable/' \
-  ~/Projects/TPTP/TPTP-v9.3.1/Problems/GRP/GRP001-1.p \
+  "$TPTP_DIR/Problems/GRP/GRP001-1.p" \
   > /tmp/ctl/Problems/ZZZ/CTRL001-1.p
-cd /tmp/ctl && BIN_DIR=~/Projects/Prover9Mace4/bin ~/Projects/prover9-corpus/oracle_run.sh \
-  Problems/ZZZ/CTRL001-1.p
+cd /tmp/ctl && "$CORPUS/oracle_run.sh" Problems/ZZZ/CTRL001-1.p
 ```
 
 GRP001-1 is unsatisfiable and Prover9 proves it in about 110 ms, so relabelling
@@ -188,7 +192,8 @@ remaining work from the output file on every pass and halves concurrency when
 the driver does not survive:
 
 ```sh
-BIN_DIR=~/Projects/Prover9Mace4/bin TPTP_SECS=300 MEM_KB=12000000 \
+# From this clone, against the sibling build; BIN_DIR= for another one.
+TPTP_DIR=/path/to/TPTP-v9.3.1 TPTP_SECS=300 MEM_KB=12000000 \
   CGROUP_MAX=160G ./oracle_sweep_resume.sh \
     retry300_mace4_ordered.tsv results/oracle-300s-mace4.tsv 48
 ```
