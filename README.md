@@ -19,7 +19,7 @@ problem library (v9.3.1, from <https://www.tptp.org> — `results/` holds proble
 
 ```sh
 git clone https://github.com/madGambol/Prover9Mace4.git
-git clone https://mirror.invalid/Prover9Corpus.git prover9-corpus
+# and this repository, as prover9-corpus, beside it
 (cd Prover9Mace4 && make all)
 ```
 
@@ -92,8 +92,8 @@ against. The shape of it:
 
 ```sh
 # A/A first -- the noise floor.  An A/B number means nothing without it.
-xargs -a comparable.txt -P 60 -I{} ./ab.sh aa "{}"
-xargs -a comparable.txt -P 60 -I{} ./ab.sh ab "{}"
+xargs -a comparable.txt -P "$(nproc)" -I{} ./ab.sh aa "{}"
+xargs -a comparable.txt -P "$(nproc)" -I{} ./ab.sh ab "{}"
 ```
 
 where `ab.sh` runs the pair under both builds, pipes each through
@@ -113,7 +113,7 @@ else only measures how much it can do, not whether what it says is true.
 ```sh
 cd ~/Projects/TPTP/TPTP-v9.3.1          # includes resolve relative to here
 BIN_DIR=~/Projects/Prover9Mace4/bin TPTP_SECS=10 \
-  xargs -a ~/Projects/prover9-corpus/oracle_sample.txt -P 80 -I{} \
+  xargs -a ~/Projects/prover9-corpus/oracle_sample.txt -P "$(nproc)" -I{} \
     ~/Projects/prover9-corpus/oracle_run.sh '{}' > oracle.tsv
 grep UNSOUND oracle.tsv
 ```

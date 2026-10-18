@@ -44,11 +44,27 @@ set -u
 A=${1:?need the baseline tsv}
 B=${2:?need the current tsv}
 REPS=${3:-5}
-JOBS=${4:-32}
 BIN_A=${BIN_A:?set BIN_A}
 BIN_B=${BIN_B:?set BIN_B}
 SECS=${SECS:-10}
 MEM_KB=${MEM_KB:-4000000}
+
+# Default concurrency is derived, not fixed: one run per core, and no more
+# than memory allows at the per-run ceiling.  A fixed number is wrong on every
+# machine except the one it was tuned on -- 32 concurrent runs on a four-core
+# laptop is eightfold oversubscription, and at this ceiling each it is an OOM
+# kill partway through a sweep rather than a slow sweep.  It scales up as well
+# as down, and an explicit argument or JOBS= still wins over both.
+_cores=$( (nproc || getconf _NPROCESSORS_ONLN) 2>/dev/null || echo 1 )
+_job_mb=$(( MEM_KB / 1024 ))
+_avail_mb=$(awk '/^MemAvailable:/ {print int($2 / 1024)}' /proc/meminfo 2>/dev/null)
+if [ -n "${_avail_mb:-}" ] && [ "${_avail_mb:-0}" -gt 0 ] && [ "$_job_mb" -gt 0 ]; then
+  _mem_jobs=$(( _avail_mb / _job_mb ))
+  [ "$_mem_jobs" -lt 1 ] && _mem_jobs=1
+  [ "$_mem_jobs" -lt "$_cores" ] && _cores=$_mem_jobs
+fi
+[ "$_cores" -lt 1 ] && _cores=1
+JOBS=${4:-$_cores}
 HERE=$(cd "$(dirname "$0")" && pwd)
 ONE=${RUN_ONE:-$HERE/run_one.sh}
 TPTP=${TPTP_DIR:-$HOME/Projects/TPTP/TPTP-v9.3.1}
