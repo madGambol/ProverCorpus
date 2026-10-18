@@ -12,22 +12,25 @@ be re-run once the session ended; it is here so that they can.
 - The headline numbers these results produce are written up in the parent
   tree's `RESULTS.md`; this repo is the evidence behind them.
 
-**Two things are not here and are needed to reproduce anything:** the TPTP
-problem library (v9.3.1, from <https://www.tptp.org> — `results/` holds problem
-*paths*, not problems) and a built `Prover9Mace4` tree. The scripts look for
-`../Prover9Mace4/bin` and take `BIN_DIR`/`TPTP_DIR` to override.
+**A built `Prover9Mace4` tree is needed for anything here**, and the scripts
+look for `../Prover9Mace4/bin`, with `BIN_DIR`/`TPTP_DIR` to override:
 
 ```sh
 git clone https://github.com/madGambol/Prover9Mace4.git
-# and this repository, as prover9-corpus, beside it
+git clone https://github.com/madGambol/ProverCorpus.git prover9-corpus
 (cd Prover9Mace4 && make all)
 ```
 
-The examples below spell the corpus directory `~/Projects/prover9-corpus`,
-which is why the clone above is named that; the published repository is
-`Prover9Corpus`. Nothing but those examples depends on the name — the scripts
-resolve the tree under test as `../Prover9Mace4/bin`, whatever this directory
-is called.
+**The TPTP problem library is not here** and is needed for the capability
+work — the sweeps, the oracle, the A/B — because `results/` holds problem
+*paths*, not problems. Fetch v9.3.1 from <https://www.tptp.org>. The
+memory-safety gate (`tier3`) needs none of it: `files.txt` points only inside
+this repository.
+
+The examples below spell the corpus directory `prover9-corpus`, which is why
+the clone above renames it; the published repository is `ProverCorpus`.
+Nothing but those examples depends on the name — the scripts resolve the tree
+under test as `../Prover9Mace4/bin`, whatever this directory is called.
 
 ## What is here
 
@@ -38,11 +41,11 @@ is called.
 | `files.txt` | 168 problem paths, one per line | the tier3 memory sweeps |
 | `comparable.txt` | 174 `prog\|path` lines | the behaviour A/B |
 
-Both lists hold absolute paths into this directory. If it moves, rewrite them:
-
-```sh
-sed -i "s|/old/path|$PWD|" files.txt comparable.txt
-```
+Both lists hold paths **relative to this directory**, and the scripts that
+read them resolve a relative path against the list file's own location rather
+than the shell's working directory, so this clone works wherever it sits and
+the lists need no rewriting when it moves. An absolute path in a list is
+still honoured as given, and blank lines and `#` comments are skipped.
 
 ## The tools
 
