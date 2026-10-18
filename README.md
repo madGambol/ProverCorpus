@@ -84,7 +84,7 @@ cd ~/Projects/Prover9Mace4/test.src
 
 make tier1                                   # ~2 s
 make tier2 BASELINE=/path/to/pristine/bin    # ~3 min
-make tier3 CORPUS=~/Projects/prover9-corpus/files.txt   # ~15 min, 80 jobs
+make tier3 CORPUS=../prover9-corpus/files.txt JOBS=8   # ~15 min at 8 jobs
 ```
 
 The A/B is not a make target because it needs a second build to compare
