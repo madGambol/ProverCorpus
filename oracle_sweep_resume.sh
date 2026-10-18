@@ -90,11 +90,25 @@ JOBS=${3:-$_cores}
 CGROUP_MAX=${CGROUP_MAX:-180G}
 HERE=$(cd "$(dirname "$0")" && pwd)
 RUNNER=$HERE/oracle_retry_capped.sh
+
+# The TPTP library is not part of this repository and there is no portable
+# place to look for it, so the default below is only where it sits on the
+# machine this was written on.  Every problem path is relative to its root, so
+# a wrong root is not one missing file but every run failing -- check it here,
+# once, and name TPTP_DIR in the message so the fix is obvious.
 TPTP_DIR=${TPTP_DIR:-$HOME/Projects/TPTP/TPTP-v9.3.1}
+[ -d "$TPTP_DIR" ] || { echo "no TPTP library at $TPTP_DIR -- set TPTP_DIR to the root of a TPTP release" >&2; exit 2; }
 
 [ -r "$FULL" ]    || { echo "cannot read $FULL" >&2; exit 2; }
 [ -x "$RUNNER" ]  || { echo "cannot execute $RUNNER" >&2; exit 2; }
 touch "$OUT"      || { echo "cannot write $OUT" >&2; exit 2; }
+
+# Each pass cds into the TPTP library before appending to this file, so a
+# relative path would land inside the library -- or, far more often, fail to
+# open there and leave the pass having added nothing, which the loop below
+# reads as "the driver did not survive" and answers by halving the job count.
+# Make it absolute here, while the caller's directory is still current.
+OUT=$(cd "$(dirname "$OUT")" && pwd)/$(basename "$OUT")
 
 stalls=0
 pass=0

@@ -67,7 +67,24 @@ fi
 JOBS=${4:-$_cores}
 HERE=$(cd "$(dirname "$0")" && pwd)
 ONE=${RUN_ONE:-$HERE/run_one.sh}
+
+# The TPTP library is not part of this repository and there is no portable
+# place to look for it, so the default below is only where it sits on the
+# machine this was written on.  Every problem path is relative to its root, so
+# a wrong root is not one missing file but every run failing -- check it here,
+# once, and name TPTP_DIR in the message so the fix is obvious.
 TPTP=${TPTP_DIR:-$HOME/Projects/TPTP/TPTP-v9.3.1}
+[ -d "$TPTP" ] || { echo "no TPTP library at $TPTP -- set TPTP_DIR to the root of a TPTP release" >&2; exit 2; }
+
+# The caller's two bin directories are made absolute while the caller's
+# directory is still current: the reps below run after a cd into the TPTP
+# library, where a relative one names nothing and every rep comes back empty
+# -- which this script would report as NOISE on every pair, the one verdict
+# that invites someone to dismiss a real regression.  An absolute path is
+# passed through untouched.
+case $BIN_A in /*) ;; *) BIN_A=$PWD/$BIN_A ;; esac
+case $BIN_B in /*) ;; *) BIN_B=$PWD/$BIN_B ;; esac
+
 W=$(mktemp -d) || exit 2
 trap 'rm -rf "$W"' 0 1 2 3 15
 
@@ -94,7 +111,7 @@ chmod +x $W/one.sh
 awk -v r="$REPS" -F'\t' '{ for (i=1;i<=r;i++) { printf "%s\tA\t%s\t%s\t%d\n", $1,$2,$3,i; printf "%s\tB\t%s\t%s\t%d\n", $1,$2,$3,i } }' \
   $W/changed | shuf > $W/work
 
-cd "$TPTP" || exit 2
+cd "$TPTP" || { echo "cannot enter the TPTP library at $TPTP -- set TPTP_DIR" >&2; exit 2; }
 BIN_A="$BIN_A" BIN_B="$BIN_B" SECS="$SECS" MEM_KB="$MEM_KB" H="$ONE" OUT="$W/out" \
   xargs -a $W/work -d'\n' -P "$JOBS" -I{} env BIN_A="$BIN_A" BIN_B="$BIN_B" SECS="$SECS" \
      MEM_KB="$MEM_KB" H="$ONE" OUT="$W/out" $W/one.sh '{}'

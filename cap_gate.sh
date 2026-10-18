@@ -81,13 +81,35 @@ JOBS=${4:-$_cores}
 REPS=${REPS:-2}
 HERE=$(cd "$(dirname "$0")" && pwd)
 ONE=${CAP_ONE:-$HERE/run_one.sh}
+
+# The TPTP library is not part of this repository and there is no portable
+# place to look for it, so the default below is only where it sits on the
+# machine this was written on.  This is a gate, so a machine without the
+# library still skips rather than fails -- but the message names TPTP_DIR and
+# the path it tried, because "no TPTP library" on its own reads as a broken
+# library when the truth is an unset variable and one machine's layout.
 TPTP=${TPTP_DIR:-$HOME/Projects/TPTP/TPTP-v9.3.1}
 LIST=${CAP_LIST:-$HERE/cap_gate_problems.txt}
 
 for p in "$A/prover9" "$B/prover9" "$ONE"; do
   [ -x "$p" ] || { echo "cap_gate: SKIP (cannot execute $p)"; exit 0; }
 done
-[ -d "$TPTP" ] && [ -r "$LIST" ] || { echo "cap_gate: SKIP (no TPTP library or problem list)"; exit 0; }
+[ -d "$TPTP" ] || { echo "cap_gate: SKIP (no TPTP library at $TPTP -- set TPTP_DIR to the root of a TPTP release)"; exit 0; }
+[ -r "$LIST" ] || { echo "cap_gate: SKIP (cannot read the problem list $LIST -- set CAP_LIST)"; exit 0; }
+
+# The two bin directories are made absolute while the caller's directory is
+# still current, because the runs below happen after a cd into the TPTP
+# library, where a relative one names nothing.  The -x check above passes on a
+# relative path, so without this every run returns NOROW -- and NOROW is not
+# read as a broken invocation but as an answer: if only the candidate's path
+# is relative the awk below reports it losing every problem the baseline
+# answers, and if both are it reports a clean PASS over nothing.  Two wrong
+# answers that look like results, which is worse than a crash.  An absolute
+# path is passed through untouched, so the usual invocation -- and the cap
+# target in ../Prover9Mace4/test.src/Makefile, which passes two absolute
+# directories -- behaves exactly as before.
+case $A in /*) ;; *) A=$PWD/$A ;; esac
+case $B in /*) ;; *) B=$PWD/$B ;; esac
 
 W=$(mktemp -d) || exit 2
 trap 'rm -rf "$W"' 0 1 2 3 15
@@ -108,7 +130,7 @@ awk -v r="$REPS" '{ for (i=1;i<=r;i++) for (s="A"; s!="done"; s=(s=="A"?"B":"don
   "$LIST" | shuf > $W/work
 echo "cap_gate: $(wc -l < "$LIST") problems, both provers, $REPS reps per build, ${SECS}s CPU, $JOBS jobs"
 echo "cap_gate: load average now $(cut -d' ' -f1-3 /proc/loadavg) on $(nproc) cores -- a loaded machine makes a ${SECS}s budget mean less"
-cd "$TPTP" || exit 2
+cd "$TPTP" || { echo "cap_gate: cannot enter the TPTP library at $TPTP -- set TPTP_DIR" >&2; exit 2; }
 xargs -a $W/work -d'\n' -P "$JOBS" -I{} \
   env BIN_A="$A" BIN_B="$B" SECS="$SECS" MEM_KB="$MEM_KB" H="$ONE" OUT=$W/out $W/one.sh '{}'
 

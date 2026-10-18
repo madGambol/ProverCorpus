@@ -53,11 +53,15 @@
 # Usage: baseline_ab.sh BIN_A BIN_B OUT_A OUT_B [SAMPLE] [SECS] [JOBS]
 
 set -u
+# The sample ships in this repository, so it is found next to this script
+# rather than at one absolute path -- a clone works wherever it is put, and an
+# explicit fifth argument still wins.
+HERE=$(cd "$(dirname "$0")" && pwd)
 A=${1:?need the baseline bin dir}
 B=${2:?need the current bin dir}
 OUTA=${3:?need the baseline output tsv}
 OUTB=${4:?need the current output tsv}
-SAMPLE=${5:-$HOME/Projects/prover9-corpus/oracle_sample.txt}
+SAMPLE=${5:-$HERE/oracle_sample.txt}
 SECS=${6:-10}
 MEM_KB=${MEM_KB:-4000000}
 
@@ -78,14 +82,33 @@ fi
 [ "$_cores" -lt 1 ] && _cores=1
 JOBS=${7:-$_cores}
 CGROUP_MAX=${CGROUP_MAX:-160G}
-HERE=$(cd "$(dirname "$0")" && pwd)
 ONE=${RUN_ONE:-$HERE/run_one.sh}
+
+# The TPTP library is not part of this repository and there is no portable
+# place to look for it, so the default below is only where it sits on the
+# machine this was written on.  Every problem path is relative to its root, so
+# a wrong root is not one missing file but every run failing -- check it here,
+# once, and name TPTP_DIR in the message so the fix is obvious.
 TPTP=${TPTP_DIR:-$HOME/Projects/TPTP/TPTP-v9.3.1}
+[ -d "$TPTP" ] || { echo "no TPTP library at $TPTP -- set TPTP_DIR to the root of a TPTP release" >&2; exit 2; }
 
 for p in "$ONE" "$A/prover9" "$B/prover9"; do
   [ -x "$p" ] || { echo "cannot execute $p" >&2; exit 2; }
 done
 [ -r "$SAMPLE" ] || { echo "cannot read $SAMPLE" >&2; exit 2; }
+
+# The caller's four paths are made absolute while the caller's directory is
+# still current, because the queue below runs inside a cgroup that cds into
+# the TPTP library first.  After that cd a relative bin directory names
+# nothing, so every run comes back empty, and a relative output file is
+# appended to inside the library instead of where the caller asked -- the -x
+# check above passes either way, so neither leaves a mark.  An absolute path
+# is passed through untouched; $PWD rather than cd+pwd because the two output
+# files need not exist yet.
+case $A in /*) ;; *) A=$PWD/$A ;; esac
+case $B in /*) ;; *) B=$PWD/$B ;; esac
+case $OUTA in /*) ;; *) OUTA=$PWD/$OUTA ;; esac
+case $OUTB in /*) ;; *) OUTB=$PWD/$OUTB ;; esac
 
 # worker: "side<TAB>prog<TAB>path" -> one row appended to that side's file
 cat > "$HERE/.ab_one.sh" <<'EOF'

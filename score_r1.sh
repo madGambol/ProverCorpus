@@ -25,7 +25,11 @@
 # score_r1.sh -- score the post-R1 capability A/B, and set it against the
 # pre-R1 one so the recovery is visible rather than asserted.
 set -u
-R=$HOME/Projects/prover9-corpus/results
+# The sweeps live in this repository, next to this script, so they are found
+# from its own location rather than at one absolute path -- a clone scores its
+# own results wherever it is put.
+HERE=$(cd "$(dirname "$0")" && pwd)
+R=$HERE/results
 P=$R/cap-r1-pristine.tsv
 C=$R/cap-r1-current.tsv
 P0=$R/cap-10s-pristine.tsv.gz
@@ -81,7 +85,6 @@ printf '  post-R1: %4d gained, %4d lost\n' \
 
 echo
 echo "=== R1's twelve ==="
-for p in $(cat $HOME/Projects/prover9-corpus/cap_gate_problems.txt 2>/dev/null | head -0); do :; done
 printf '  %-30s %-12s %-12s\n' PROBLEM 'pre-R1' 'post-R1'
 for p in Problems/SWV/SWV558-1.010.p Problems/SWV/SWV543-1.010.p Problems/SWV/SWV547-1.010.p \
          Problems/SWB/SWB006-10.p Problems/SWB/SWB009-10.p Problems/SWB/SWB017-10.p \

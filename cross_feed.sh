@@ -74,6 +74,25 @@ fi
 JOBS=${JOBS:-$_cores}
 PROG=${PROG:-prover9}
 HERE=$(cd "$(dirname "$0")" && pwd)
+
+# The TPTP library is not part of this repository and there is no portable
+# place to look for it, so the default below is only where it sits on the
+# machine this was written on.  Every problem path is relative to its root, so
+# a wrong root is not one missing file but every run failing -- check it here,
+# once, and name TPTP_DIR in the message so the fix is obvious.
+TPTP=${TPTP_DIR:-$HOME/Projects/TPTP/TPTP-v9.3.1}
+[ -d "$TPTP" ] || { echo "no TPTP library at $TPTP -- set TPTP_DIR to the root of a TPTP release" >&2; exit 2; }
+
+# The caller's two bin directories and the dump directory are made absolute
+# while the caller's directory is still current: the four combinations below
+# run after a cd into the TPTP library, where a relative one names nothing --
+# the dumped translations would be looked for inside the library and the
+# provers would not be found at all, which reads as every lost problem being
+# the input's fault.  An absolute path is passed through untouched.
+case $BIN_A in /*) ;; *) BIN_A=$PWD/$BIN_A ;; esac
+case $BIN_B in /*) ;; *) BIN_B=$PWD/$BIN_B ;; esac
+case $D in /*) ;; *) D=$PWD/$D ;; esac
+
 W=$(mktemp -d) || exit 2
 trap 'rm -rf "$W"' 0 1 2 3 15
 
@@ -87,7 +106,7 @@ echo "$n $PROG problems lost; 4 combinations each"
 
 : > $W/out
 awk '{printf "%s\tA\tA\n%s\tA\tB\n%s\tB\tA\n%s\tB\tB\n",$0,$0,$0,$0}' $W/lost | shuf > $W/work
-cd "${TPTP_DIR:-$HOME/Projects/TPTP/TPTP-v9.3.1}" || exit 2
+cd "$TPTP" || { echo "cannot enter the TPTP library at $TPTP -- set TPTP_DIR" >&2; exit 2; }
 xargs -a $W/work -d'\n' -P "$JOBS" -I{} \
   env BIN_A="$BIN_A" BIN_B="$BIN_B" D="$D" SECS="$SECS" MEM_KB="$MEM_KB" \
       OUT=$W/out "$HERE/cross_feed_one.sh" '{}'

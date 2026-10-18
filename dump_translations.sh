@@ -46,8 +46,32 @@ if [ -n "${_avail_mb:-}" ] && [ "${_avail_mb:-0}" -gt 0 ] && [ "$_job_mb" -gt 0 
 fi
 [ "$_cores" -lt 1 ] && _cores=1
 JOBS=${JOBS:-$_cores}
-mkdir -p "$D"
-cd "${TPTP_DIR:-$HOME/Projects/TPTP/TPTP-v9.3.1}" || exit 2
+
+# The TPTP library is not part of this repository and there is no portable
+# place to look for it, so the default below is only where it sits on the
+# machine this was written on.  Every problem path is relative to its root, so
+# a wrong root is not one missing file but every run failing -- check it here,
+# once, and name TPTP_DIR in the message so the fix is obvious.
+TPTP=${TPTP_DIR:-$HOME/Projects/TPTP/TPTP-v9.3.1}
+[ -d "$TPTP" ] || { echo "no TPTP library at $TPTP -- set TPTP_DIR to the root of a TPTP release" >&2; exit 2; }
+
+# All four of the caller's paths are made absolute before the cd below,
+# because after it a relative one quietly means something else: the list would
+# be looked for inside the TPTP library, the dumps written into it, and
+# neither build found at all -- and the problem paths a list holds are
+# relative to that same root, so nothing complains.  mkdir runs in the
+# caller's directory, so the directory created and the directory written have
+# to be made to agree.  The list and the output directory are checked here, so
+# those two can be normalised by entering them; the builds are not, so they
+# are only prefixed, and an already absolute path is left untouched.
+[ -r "$L" ] || { echo "cannot read the problem list $L" >&2; exit 2; }
+L=$(cd "$(dirname "$L")" && pwd)/$(basename "$L")
+mkdir -p "$D" || { echo "cannot create the output directory $D" >&2; exit 2; }
+D=$(cd "$D" && pwd) || exit 2
+case $BIN_A in /*) ;; *) BIN_A=$PWD/$BIN_A ;; esac
+case $BIN_B in /*) ;; *) BIN_B=$PWD/$BIN_B ;; esac
+
+cd "$TPTP" || { echo "cannot enter the TPTP library at $TPTP -- set TPTP_DIR" >&2; exit 2; }
 xargs -a "$L" -d'\n' -P "$JOBS" -I{} env BIN_A="$BIN_A" BIN_B="$BIN_B" D="$D" bash -c '
   p=$0; k=$(printf "%s" "$p" | tr / _)
   ( ulimit -t 300 -s 200000; exec timeout 400 "$BIN_A/tptp_to_ladr" ) < "$p" > "$D/$k.A" 2>/dev/null
