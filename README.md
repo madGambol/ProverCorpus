@@ -18,7 +18,7 @@ problem library (v9.3.1, from <https://www.tptp.org> — `results/` holds proble
 `../Prover9Mace4/bin` and take `BIN_DIR`/`TPTP_DIR` to override.
 
 ```sh
-git clone https://mirror.invalid/Prover9Mace4.git
+git clone https://github.com/madGambol/Prover9Mace4.git
 git clone https://mirror.invalid/Prover9Corpus.git prover9-corpus
 (cd Prover9Mace4 && make all)
 ```
